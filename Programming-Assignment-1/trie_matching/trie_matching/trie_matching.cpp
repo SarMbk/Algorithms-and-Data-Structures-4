@@ -79,22 +79,22 @@ int main (){
     cin >> txt;
 
     size_t n;
-	cin >> n;
+    cin >> n;
 
-	vector <string> patterns (n);
+    vector <string> patterns (n);
     for (size_t i = 0; i < n; i++)
-		cin >> patterns[i];
+        cin >> patterns[i];
 
     vector <size_t> ans;
     ans = TrieMatch(txt, patterns);
 
     for (size_t i = 0; i < ans.size (); i++){
-		cout << ans[i];
+        cout << ans[i];
         if (i + 1 < ans.size ())
-			cout << " ";
-		else
-			cout << endl;
-	}
+            cout << " ";
+        else
+            cout << endl;
+    }
 
-	return 0;
+    return 0;
 }
