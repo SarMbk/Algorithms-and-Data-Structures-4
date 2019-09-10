@@ -42,15 +42,15 @@ trie build_trie(const vector<string> & patterns) {
 
 
 // Algorithm implemented based on problem handout.
-void PrefixTrieMatch (const string& text, size_t n, vector<size_t> &result, trie &t){
+void PrefixTrieMatch (const string& text, size_t i, vector<size_t> &result, trie &t){
     size_t curNode = 0;
-    size_t curIndex = n;
+    size_t curIndex = i;
 
     while (true){
         char curSymbol = text[curIndex];
 
         if (t[curNode].empty()){
-            result.push_back(n);
+            result.push_back(i);
             break;
         }
         else if (t[curNode].count(curSymbol)){
