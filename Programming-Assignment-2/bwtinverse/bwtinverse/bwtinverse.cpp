@@ -6,8 +6,9 @@
 
 using namespace std;
 
+// To understand this code and problem read ch9 of the Bioinformatics Algorithms book (vol2 ed2)
 
-
+// Functor to use when hashing pair to int
 struct hash_pair {
     size_t operator()(const pair<char, int>& p) const{
         auto hash1 = hash<char>{}(p.first);
@@ -64,6 +65,8 @@ string InverseBWT(const string& bwt) {
     sort(firstCol.begin(), firstCol.end());
 
     // map of < <character -  instance number of character>  - character position>
+    // e.g. if bwt string is "abab" the first to last map will be: [a-1 : 0, b-1 : 1, a-2 : 2, b-2 : 3]
+    // it maps the character and instance pair to its position in the bwt string
     unordered_map<pair<char, int> , int, hash_pair > firstToLast;
     populateMap (firstToLast, bwt);
 
@@ -71,20 +74,19 @@ string InverseBWT(const string& bwt) {
     vector <pair<char, int> > firstColCounts;
     populateVector (firstColCounts, firstCol);
 
+    // Use the first to last property to reconstruct the original string
+    pair<char, int> chAndNum = firstColCounts[0];
     for (int i=0; i<firstColCounts.size(); ++i){
-        pair<char, int> chAndNum = firstColCounts[i];
+        //pair<char, int> chAndNum = firstColCounts[i];
         int nextCharPos = firstToLast.at(chAndNum);
         char nextChar = firstCol[nextCharPos];
         text.push_back(nextChar);
+        chAndNum = firstColCounts[nextCharPos];
     }
-
-
-
-
-  // write your code here
 
   return text;
 }
+
 
 int main() {
   string bwt;
