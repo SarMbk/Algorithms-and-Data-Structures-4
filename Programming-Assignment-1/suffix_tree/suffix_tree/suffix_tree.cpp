@@ -12,6 +12,23 @@ using std::string;
 using std::vector;
 using namespace std;
 
+
+
+
+int main() {
+  string text;
+  cin >> text;
+  vector<string> edges = BuildSuffixTree(text);
+  for (size_t i = 0; i < edges.size(); ++i) {
+    cout << edges[i] << endl;
+  }
+  return 0;
+}
+
+
+
+
+/*
 struct edge {
     size_t startPos;
     size_t length;
@@ -80,16 +97,4 @@ vector<string> BuildSuffixTree(const string& text) {
     return result;
 }
 
-
-int main() {
-  string text;
-  cin >> text;
-  vector<string> edges = BuildSuffixTree(text);
-  for (size_t i = 0; i < edges.size(); ++i) {
-    cout << edges[i] << endl;
-  }
-  return 0;
-}
-
-
-
+*/
