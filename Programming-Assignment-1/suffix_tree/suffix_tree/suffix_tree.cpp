@@ -4,97 +4,77 @@
 #include <vector>
 #include <algorithm>
 
-using std::cin;
-using std::cout;
-using std::endl;
-using std::map;
-using std::string;
-using std::vector;
 using namespace std;
+
+
+
+// Attempt to solve per pseudocode in textbook pp 165 - 167
+// Modified suffix trie is built. What is left is to create a suffix tree from a trie
+
+typedef map<char, int> edges;
+typedef vector<edges> trie;
+typedef vector<pair<int, edges> > suffixTrie;
+
+
+suffixTrie ModifiedSuffixTrieConstruction(string &text){
+    suffixTrie t;
+    pair<int, edges> e;
+    t.push_back(e);
+    int index = 1;
+
+    int n = text.size();
+
+    for (int i=0; i<n; ++i){
+        int curNode = 0;
+        for (int j=i; j<n; ++j){
+            char curSymbol = text[j];
+
+            if ( t[curNode].second.count(curSymbol) ){
+                curNode = t[curNode].second[curSymbol];
+            }
+            else {
+                t[curNode].first = -1;
+                t[curNode].second[curSymbol] = index;
+                pair<int, edges> newEdge;
+                t.push_back(newEdge);
+                curNode = index;
+                index++;
+
+            }
+        }
+        if(t[curNode].second.empty()){
+            t[curNode].first = i;
+        }
+    }
+    return t;
+}
+
+
+// This function is not yet finished
+void SuffixTrieConstruction(string &text){
+    suffixTrie t = ModifiedSuffixTrieConstruction(text);
+    vector<string> result;
+    for (int i=0; i<t.size(); ++i){
+        string branch;
+        if (t[i].second.size()==1){
+        }
+    }
+}
+
 
 
 
 
 int main() {
-  string text;
-  cin >> text;
-  vector<string> edges = BuildSuffixTree(text);
-  for (size_t i = 0; i < edges.size(); ++i) {
-    cout << edges[i] << endl;
-  }
-  return 0;
+    string text;
+    cin >> text;
+    vector<string> edges = SuffixTree(text);
+    for (int i = 0; i < edges.size(); ++i) {
+        cout << edges[i] << endl;
+    }
+    return 0;
 }
 
 
 
 
-/*
-struct edge {
-    size_t startPos;
-    size_t length;
-    edge(size_t start, size_t length) : startPos(start), length(length) {}
-    vector<edge> children;
-};
-
-
-// Build a suffix tree of the string text and return a vector
-// with all of the labels of its edges (the corresponding
-// substrings of the text) in any order.
-void add(const string& text, const edge& e, vector<string>& result) {
-    result.push_back(text.substr(e.startPos,e.length));
-    for (auto & e : e.children) {
-        add(text,e,result);
-    }
-}
-
-
-vector<string> BuildSuffixTree(const string& text) {
-    vector<string> result;
-    vector<edge> root;
-
-    for (size_t i = 0; i < text.size(); ++i) {
-        vector<edge>* edges = &root;
-        size_t suffix_size = text.size() - i;
-        size_t j = i;
-
-        for (;;) {
-            auto root_edge = find_if(begin(*edges),end(*edges),[&text,j](const edge & e){
-                return text[j] == text[e.startPos];
-            });
-            if (root_edge != end(*edges)) {
-
-                size_t length;
-                for (length = 0; length < min(root_edge->length,suffix_size) && text[j+length] == text[root_edge->startPos+length]; ++length);
-
-                if (length < root_edge->length) {
-
-                    edge e { root_edge->startPos + length, root_edge->length - length };
-                    swap(e.children,root_edge->children);
-
-                    root_edge->length = length;
-
-                    root_edge->children.push_back(std::move(e));
-                    root_edge->children.emplace_back(j+length,suffix_size-length);
-
-                    break;
-
-                } else {
-                    j += length;
-                    suffix_size -= length;
-                    edges = &root_edge->children;
-                }
-            } else {
-                edges->emplace_back(j,suffix_size);
-                break;
-            }
-        }
-    }
-
-    for (edge & e : root) {
-        add(text,e,result);
-    }
-
-    return result;
-}
-
-*/
