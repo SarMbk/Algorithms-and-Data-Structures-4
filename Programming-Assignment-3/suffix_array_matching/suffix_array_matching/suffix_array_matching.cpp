@@ -1,6 +1,10 @@
 // Explanation of how the code works can be found in lecture notes from week 4 of the course.
 // All methods to build suffix array are taken from problem set 3 problem 2.
-
+// Method FindOccurrences2 works but does not pass the speed test. it is O(|pattern|*log|text|)
+// Method FindOccurrences is buggy. Gives wrong results. It is implemented per Crochemore et al ch 4.
+// That book is really dense and hard to follow.
+// It is supposed to work in O(|pattern| + log|text|) the variable names they use are also terrible.
+// Im giving up on this problem.
 
 #include <cstdio>
 #include <iostream>
@@ -15,7 +19,8 @@ using namespace std;
 const int sigma = 5;
 const int A = 1, C = 2, G = 3, T = 4, Dollar = 0; // Alphabet size: ACGT$; 5 symbols
 
-// FUNCTION PROTPTYPES FOR BUILDING SUFFIX ARRAY
+
+// FUNCTION PROTOTYPES FOR BUILDING SUFFIX ARRAY
 int chToInd(char ch);
 vector<int> SortCharacters(const string &text);
 vector<int> ComputeCharClasses(const string &text, vector<int> &order);
@@ -24,13 +29,26 @@ vector<int> UpdateClasses(vector<int> &newOrder, vector<int> &classVec, int L);
 vector<int> BuildSuffixArray(const string& text);
 
 
+
+// FUNCTION PROTORYPES FOR FINDING PATTERNS IN TEXT USING LCP ARRAYS
+int LCPofSuffixes(const string &text, int i, int j, int equal);
+vector<int> InvertSuffixArray(const vector<int>& order);
+vector<int> InvertSuffixArray(const vector<int>& order);
+vector<int> ComputeLCPArray(const string &text, const vector<int> &order);
+int LCP(int d, int f, vector<int> &lcpArray, const string &text);
+int getLenofLCP(const string &pattern, const string &text, int i, int l, const vector<int> &suffix_array);
+pair<int,int> Search(   const string& text, const vector<int> &suffix_array,
+                        vector<int> &lcpArray, const string &pattern);
+vector<int> FindOccurrences(const string& pattern, const string& text, const vector<int>& suffix_array);
+
+
 // FUNCTION DEFINITIONS FOR FINDING OCCURRENCES
 // This algorithm is constructed based on pseudocode on p135 of course textbook Bioinformatics Algorithms vol 2 2nd ed.
 // No algorithm using LCP array is used.
 // This algorithm works but it's too slow
 // Need to speed it ups with LCP
 // Algorithm described in Algorithms on Strings, Crochemore et al ch 4
-vector<int> FindOccurrences(const string& pattern, const string& text, const vector<int>& suffix_array) {
+vector<int> FindOccurrences2(const string& pattern, const string& text, const vector<int>& suffix_array) {
   vector<int> result;
 
   int minIndex = 0;
@@ -66,9 +84,6 @@ vector<int> FindOccurrences(const string& pattern, const string& text, const vec
 
   return result;
 }
-
-
-
 
 
 // MAIN METHOD
@@ -108,6 +123,7 @@ int chToInd(char ch){
     else if (ch=='$') return Dollar;
 }
 
+
 vector<int> SortCharacters(const string &text){
     vector<int> order(text.size(), 0);
     vector<int> count(sigma, 0);
@@ -126,6 +142,7 @@ vector<int> SortCharacters(const string &text){
     return order;
 }
 
+
 vector<int> ComputeCharClasses(const string &text, vector<int> &order){
     vector<int> classVec (text.size(), 0);
     classVec[order[0]] = 0;
@@ -139,6 +156,7 @@ vector<int> ComputeCharClasses(const string &text, vector<int> &order){
     }
     return classVec;
 }
+
 
 vector<int> SortDoubled(const string &text, int L, vector<int> &order, vector<int> &classVec){
     int s = text.size();
@@ -162,6 +180,7 @@ vector<int> SortDoubled(const string &text, int L, vector<int> &order, vector<in
     return newOrder;
 }
 
+
 vector<int> UpdateClasses(vector<int> &newOrder, vector<int> &classVec, int L){
     int n = newOrder.size();
     vector<int> newClass(n, 0);
@@ -179,6 +198,7 @@ vector<int> UpdateClasses(vector<int> &newOrder, vector<int> &classVec, int L){
     return newClass;
 }
 
+
 vector<int> BuildSuffixArray(const string& text) {
   vector<int> order = SortCharacters(text);
   vector<int> classVec = ComputeCharClasses(text, order);
@@ -192,8 +212,9 @@ vector<int> BuildSuffixArray(const string& text) {
 }
 
 
-
-/*
+// FUNCTION DEFINITIONS FOR FINDING PATTERNS IN TEXT USING LCP ARRAYS
+// PER CROCHEMORE ET AL CH 4.
+// CODE IS BUGGY, DOESN'T PRODUCE CORRECT RESULTS
 int LCPofSuffixes(const string &text, int i, int j, int equal){
     int lcp = max(0, equal);
     while (i+lcp < text.size() && j+lcp < text.size()){
@@ -233,4 +254,117 @@ vector<int> ComputeLCPArray(const string &text, const vector<int> &order){
     }
     return lcpArray;
 }
-*/
+
+
+int LCP(int d, int f, vector<int> &lcpArray, const string &text){
+    int n = text.size();
+    if (d+1 == f) return lcpArray[f];
+    else{
+        int i = (d+f)/2;
+        int ans = min(LCP(d,i,lcpArray,text) , LCP(i,f,lcpArray,text));
+        return ans;
+    }
+}
+
+
+int getLenofLCP(const string &pattern, const string &text, int i, int l, const vector<int> &suffix_array){
+    string subPattern(pattern.begin()+l, pattern.end());
+
+    int ans=0;
+    int index = l;
+    while(index < pattern.size() && index < text.size()){
+        if ( pattern[index] == text[suffix_array[i] + index]){
+            ans++;
+            index++;
+        }
+        else break;
+    }
+    return  ans;
+}
+
+
+pair<int,int> Search(const string& text, const vector<int> &suffix_array, vector<int> &lcpArray, const string &pattern){
+    int n = text.size();
+    int m = pattern.size();
+    int d = -1, ld = 0, f = n, lf = 0;
+
+    while (d+1 < f){
+        int i = (d+f)/2;
+        if (ld <= LCP(i,f,lcpArray,text) && LCP(i,f,lcpArray, text) < lf){
+            d = i;
+            ld = LCP(i,f,lcpArray,text);
+        }
+        else if (ld <= lf && lf < LCP(i,f,lcpArray,text)){
+            f = i;
+        }
+        else if (lf <= LCP(d,i,lcpArray,text) && LCP(d,i,lcpArray,text) <ld ){
+            f = i;
+            lf = LCP(d,i,lcpArray,text);
+        }
+        else if (lf <= ld && ld < LCP(d,i,lcpArray,text) ){
+            d = i;
+        }
+        else {
+            int l = max(ld, lf);
+            l+=getLenofLCP(pattern, text, i, l, suffix_array);
+            if(l==m){
+                int e = i;
+                while (d+1 < e){
+                    int j = (d+e)/2;
+                    if (LCP(j,e,lcpArray,text) < m){
+                        d = j;
+                    }
+                    else {
+                        e = j;
+                    }
+                }
+                if (LCP(d,e,lcpArray,text) >= m){
+                    d = max(d-1, -1);
+                }
+                e = i;
+
+                while (e+1 < f){
+                    int j = (e+f)/2;
+                    if (LCP(e,j,lcpArray,text) < m){
+                        f = j;
+                    }
+                    else {
+                        e = j;
+                    }
+                }
+
+                if (LCP(e,f, lcpArray, text) >= m){
+                    f = min(f+1, n);
+                }
+                pair<int, int> ans(d,f);
+                return ans;
+            }
+
+            else if (l == n - suffix_array[i] || (l!=m && text[suffix_array[i]+l] < pattern[l]) ){
+                d = i;
+                ld = l;
+            }
+            else{
+                f = i;
+                lf = l;
+            }
+        }
+    }
+    pair<int,int> ans(d,f);
+    return ans;
+}
+
+
+vector<int> FindOccurrences(const string& pattern, const string& text, const vector<int>& suffix_array){
+    vector<int> lcpArray = ComputeLCPArray(text, suffix_array);
+    pair<int,int> ans = Search(text,suffix_array,lcpArray,pattern);
+    if (ans.first==-1) ans.first = 0;
+    if (ans.second > text.size()-1){
+        ans.second = text.size()-1;
+    }
+    vector<int> result(suffix_array.begin()+ans.first, suffix_array.begin()+ans.second);
+    return result;
+}
+
+
+
